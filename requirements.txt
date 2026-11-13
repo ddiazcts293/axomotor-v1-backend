@@ -1,0 +1,11 @@
+fastapi[standard]==0.162.4
+sqlmodel==0.0.48
+passlib[argon2]==1.7.4
+python-jose[cryptography]==3.5.0
+redis==8.1.0
+minio==7.2.20
+psycopg[binary]==3.3.8
+alembic==1.20.1
+GeoAlchemy2==0.21.0
+shapely==2.2.0
+geojson==3.3.0

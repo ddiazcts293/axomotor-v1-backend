@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgis/postgis:18-3.7
+    container_name: axomotor_v1_db
+    environment:
+      POSTGRES_USER: "axo"
+      POSTGRES_PASSWORD: "axomotor_u9"
+      POSTGRES_DB: "axomotor_v1"
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - axomotor_v1_db:/var/lib/postgresql
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: axomotor_v1_redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - axomotor_v1_redis_data:/data
+    restart: unless-stopped
+
+  minio:
+    image: chainguard/minio:latest
+    container_name: axomotor_v1_minio
+    user: "65532:65532"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: "axo"
+      MINIO_ROOT_PASSWORD: "axomotor_u9"
+    volumes:
+      - axomotor_v1_minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+  adminer:
+    image: adminer
+    container_name: axomotor_v1_adminer
+    restart: always
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  axomotor_v1_db:
+  axomotor_v1_redis_data:
+  axomotor_v1_minio_data:
