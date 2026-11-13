@@ -40,3 +40,7 @@ Para realizar cambios en este repositorio es necesario crear un fork y una nueva
 - El código del proyecto debe estar escrito en inglés, pero los comentarios si pueden estar en español.
 - Usar la convención snake_case para nombrar archivos, variables o funciones.
 - Usar la convención PascalUpperCase para nombrar clases.
+
+## Documentación
+
+- [Referencia de API](api/readme.md)
