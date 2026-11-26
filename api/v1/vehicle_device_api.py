@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Path, Query, Response, status
 from sqlmodel import Session, col, select
 
 from api.v1.common import (
@@ -30,6 +30,8 @@ DUPLICATE_DETAIL = "There is already another device registered with the same ser
     "/",
     response_model=VehicleDeviceResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Registrar dispositivo",
+    description="Asocia un dispositivo HUB o NODE a un vehículo existente; el número de serie debe ser único.",
 )
 def register_device(
     device_data: VehicleDeviceCreate,
@@ -45,14 +47,19 @@ def register_device(
     return device
 
 
-@router.get("/", response_model=list[VehicleDeviceResponse])
+@router.get(
+    "/",
+    response_model=list[VehicleDeviceResponse],
+    summary="Listar dispositivos",
+    description="Devuelve dispositivos paginados y admite filtros por vehículo, tipo y estados.",
+)
 def get_devices(
     response: Response,
     page: PaginationDep,
-    vehicle_id: Optional[UUID] = None,
-    device_type: Optional[VehicleDeviceType] = Query(default=None, alias="type"),
-    is_active: Optional[bool] = None,
-    is_enabled: Optional[bool] = None,
+    vehicle_id: Optional[UUID] = Query(default=None, description="Filtra por UUID del vehículo asociado."),
+    device_type: Optional[VehicleDeviceType] = Query(default=None, alias="type", description="Filtra por tipo HUB o NODE."),
+    is_active: Optional[bool] = Query(default=None, description="Filtra por estado activo del dispositivo."),
+    is_enabled: Optional[bool] = Query(default=None, description="Filtra por habilitación del dispositivo."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[VehicleDevice]:
@@ -71,18 +78,28 @@ def get_devices(
     return paginate(session, statement, page, response)
 
 
-@router.get("/{device_id}", response_model=VehicleDeviceResponse)
+@router.get(
+    "/{device_id}",
+    response_model=VehicleDeviceResponse,
+    summary="Consultar dispositivo",
+    description="Obtiene un dispositivo por UUID.",
+)
 def get_device(
-    device_id: UUID,
+    device_id: Annotated[UUID, Path(description="UUID del dispositivo.")],
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> VehicleDevice:
     return get_or_404(session, VehicleDevice, device_id, "Device")
 
 
-@router.put("/{device_id}", response_model=VehicleDeviceResponse)
+@router.put(
+    "/{device_id}",
+    response_model=VehicleDeviceResponse,
+    summary="Actualizar dispositivo",
+    description="Actualiza el vehículo asociado, número de serie, etiqueta, tipo o habilitación.",
+)
 def update_device(
-    device_id: UUID,
+    device_id: Annotated[UUID, Path(description="UUID del dispositivo que se desea actualizar.")],
     device_data: VehicleDeviceUpdate,
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),

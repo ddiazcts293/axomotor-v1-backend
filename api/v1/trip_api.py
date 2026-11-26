@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, col, select
 
@@ -72,6 +72,8 @@ def _stamp_status_timestamps(trip: Trip, previous_status: Optional[TripStatus]) 
     "/",
     response_model=TripResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Programar viaje",
+    description="Crea un viaje con referencias existentes; la fecha estimada de llegada no puede ser anterior a la salida.",
 )
 def register_trip(
     trip_data: TripCreate,
@@ -90,17 +92,22 @@ def register_trip(
     return trip
 
 
-@router.get("/", response_model=list[TripResponse])
+@router.get(
+    "/",
+    response_model=list[TripResponse],
+    summary="Listar viajes",
+    description="Devuelve viajes paginados, ordenados por salida, con filtros por vehículo, conductor, ubicaciones, estado y fechas.",
+)
 def get_trips(
     response: Response,
     page: PaginationDep,
-    vehicle_id: Optional[UUID] = None,
-    driver_id: Optional[UUID] = None,
-    origin_id: Optional[UUID] = None,
-    destination_id: Optional[UUID] = None,
-    trip_status: Optional[TripStatus] = Query(default=None, alias="status"),
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
+    vehicle_id: Optional[UUID] = Query(default=None, description="Filtra por UUID del vehículo asignado."),
+    driver_id: Optional[UUID] = Query(default=None, description="Filtra por UUID del conductor asignado."),
+    origin_id: Optional[UUID] = Query(default=None, description="Filtra por UUID de la ubicación de origen."),
+    destination_id: Optional[UUID] = Query(default=None, description="Filtra por UUID de la ubicación de destino."),
+    trip_status: Optional[TripStatus] = Query(default=None, alias="status", description="Filtra por estado del viaje."),
+    from_date: Optional[datetime] = Query(default=None, description="Fecha mínima de salida, inclusive."),
+    to_date: Optional[datetime] = Query(default=None, description="Fecha máxima de salida, inclusive."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[Trip]:
@@ -133,9 +140,14 @@ def get_trips(
     return paginate(session, statement, page, response)
 
 
-@router.get("/{trip_id}", response_model=TripResponseExtended)
+@router.get(
+    "/{trip_id}",
+    response_model=TripResponseExtended,
+    summary="Consultar viaje",
+    description="Obtiene el detalle del viaje con datos ampliados del vehículo y conductor.",
+)
 def get_trip(
-    trip_id: UUID,
+    trip_id: Annotated[UUID, Path(description="UUID del viaje.")],
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> Trip:
@@ -160,9 +172,14 @@ def get_trip(
     return trip
 
 
-@router.put("/{trip_id}", response_model=TripResponse)
+@router.put(
+    "/{trip_id}",
+    response_model=TripResponse,
+    summary="Actualizar viaje",
+    description="Actualiza datos o estado del viaje y registra automáticamente sus fechas de inicio o cierre cuando corresponda.",
+)
 def update_trip(
-    trip_id: UUID,
+    trip_id: Annotated[UUID, Path(description="UUID del viaje que se desea actualizar.")],
     trip_data: TripUpdate,
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),

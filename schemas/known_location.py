@@ -35,12 +35,12 @@ def validate_spatial_poligon(vertices: List[List[float]]) -> List[List[float]]:
     return vertices
 
 class KnownLocationCreate(SQLModel):
-    name: str = Field(min_length=1, max_length=60)
-    type: Optional[str] = Field(default=None, max_length=40)
-    address: str = Field(max_length=240)
+    name: str = Field(min_length=1, max_length=60, description="Nombre único de la ubicación.")
+    type: Optional[str] = Field(default=None, max_length=40, description="Clasificación opcional de la ubicación.")
+    address: str = Field(max_length=240, description="Dirección postal de la ubicación.")
     location_area: List[List[float]] = Field(
         min_length=4,
-        description="Vertices list [longitude, latitude]"
+        description="Anillo cerrado de vértices [longitud, latitud] que define el polígono GeoJSON; mínimo 4 puntos."
     )
 
     @field_validator("location_area", mode="after")
@@ -49,13 +49,13 @@ class KnownLocationCreate(SQLModel):
         return validate_spatial_poligon(vertices)
 
 class KnownLocationUpdate(SQLModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=60)
-    type: Optional[str] = Field(default=None, max_length=40)
-    address: Optional[str] = Field(default=None, max_length=240)
+    name: Optional[str] = Field(default=None, min_length=1, max_length=60, description="Nuevo nombre único de la ubicación.")
+    type: Optional[str] = Field(default=None, max_length=40, description="Nueva clasificación de la ubicación.")
+    address: Optional[str] = Field(default=None, max_length=240, description="Nueva dirección postal.")
     location_area: Optional[List[List[float]]] = Field(
         default=None,
         min_length=4,
-        description="Vertices list [longitude, latitude]"
+        description="Nuevo anillo cerrado de vértices [longitud, latitud] para el polígono; mínimo 4 puntos."
     )
 
     @field_validator("location_area", mode="after")
@@ -66,20 +66,20 @@ class KnownLocationUpdate(SQLModel):
         return validate_spatial_poligon(vertices) if vertices is not None else None
 
 class KnownLocationResponse(SQLModel):
-    location_id: UUID
-    name: str = Field(max_length=60)
-    type: Optional[str] = Field(default=None, max_length=40)
-    address: str = Field(max_length=240)
-    location_area: Any = Field(exclude=True)
-    registered_at: datetime
+    location_id: UUID = Field(description="Identificador único de la ubicación.")
+    name: str = Field(max_length=60, description="Nombre de la ubicación.")
+    type: Optional[str] = Field(default=None, max_length=40, description="Clasificación de la ubicación.")
+    address: str = Field(max_length=240, description="Dirección postal.")
+    location_area: Any = Field(exclude=True, description="Geometría interna; se representa en la respuesta como geojson.")
+    registered_at: datetime = Field(description="Fecha y hora de registro.")
 
-    @computed_field
+    @computed_field(description="Geometría GeoJSON Polygon derivada del área geográfica almacenada.")
     @property
     def geojson(self) -> Dict[str, Any]:
         polygon = to_shape(self.location_area)
         return mapping(polygon)
 
 class KnownLocationResponseShort(SQLModel):
-    name: str = Field(max_length=60)
-    type: Optional[str] = Field(default=None, max_length=40)
-    address: str = Field(max_length=240)
+    name: str = Field(max_length=60, description="Nombre de la ubicación.")
+    type: Optional[str] = Field(default=None, max_length=40, description="Clasificación de la ubicación.")
+    address: str = Field(max_length=240, description="Dirección postal.")

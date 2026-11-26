@@ -1,7 +1,7 @@
 from typing import Optional, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, Path, UploadFile, File, Form, status
 from sqlmodel import Session
 from sqlalchemy.exc import IntegrityError
 from botocore.exceptions import ClientError
@@ -22,12 +22,14 @@ CONFLICT_DETAIL = "The incident media could not be saved due to a conflicting or
     "/",
     response_model=IncidentMediaResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Subir multimedia de incidente",
+    description="Carga un archivo mediante multipart/form-data y lo asocia a un incidente existente.",
 )
 async def upload_media_file(
-    incident_id: Annotated[UUID, Form()],
-    type: Annotated[MediaType, Form()],
-    file: UploadFile = File(...),
-    file_metadata: Annotated[Optional[dict], Form()] = None,
+    incident_id: Annotated[UUID, Form(description="UUID del incidente al que se adjunta el archivo.")],
+    type: Annotated[MediaType, Form(description="Tipo de archivo: IMAGE o VIDEO.")],
+    file: UploadFile = File(..., description="Archivo de imagen o video que se almacenará."),
+    file_metadata: Annotated[Optional[dict], Form(description="Metadatos JSON opcionales del archivo.")] = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_web_or_bot_user),
 ) -> IncidentMediaFile:
@@ -65,9 +67,14 @@ async def upload_media_file(
     return media
 
 
-@router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{file_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar multimedia de incidente",
+    description="Elimina un archivo almacenado; un conductor solo puede borrar archivos que él mismo haya subido.",
+)
 def delete_media_file(
-    file_id: UUID,
+    file_id: Annotated[UUID, Path(description="UUID del archivo multimedia que se desea eliminar.")],
     session: Session = Depends(get_session),
     current_user: User = Depends(get_web_or_bot_user)
 ) -> None:

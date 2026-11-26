@@ -1,8 +1,8 @@
 from uuid import UUID
-from typing import Optional
+from typing import Annotated, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select, col
@@ -37,6 +37,8 @@ EVENT_CONFLICT_DETAIL = "The event could not be saved due to a conflicting or in
     "/",
     response_model=VehicleResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Registrar vehículo",
+    description="Crea un vehículo; placas, número de registro y VIN no deben estar registrados previamente.",
 )
 def register_vehicle(
     vehicle_data: VehicleCreate,
@@ -65,18 +67,23 @@ def register_vehicle(
     session.refresh(vehicle)
     return vehicle
 
-@router.get("/", response_model=list[VehicleResponse])
+@router.get(
+    "/",
+    response_model=list[VehicleResponse],
+    summary="Listar vehículos",
+    description="Devuelve vehículos paginados y permite filtrar por identificadores, datos descriptivos, tipo y estado.",
+)
 def get_vehicles(
     response: Response,
     page: PaginationDep,
-    plate_number: Optional[str] = None,
-    reg_number: Optional[str] = None,
-    series_vin: Optional[str] = None,
-    brand: Optional[str] = None,
-    model: Optional[str] = None,
-    year: Optional[int] = None,
-    vehicle_type: Optional[VehicleType] = None,
-    status: Optional[VehicleStatus] = None,
+    plate_number: Optional[str] = Query(default=None, description="Filtra por placas exactas."),
+    reg_number: Optional[str] = Query(default=None, description="Filtra por número de registro exacto."),
+    series_vin: Optional[str] = Query(default=None, description="Filtra por VIN exacto."),
+    brand: Optional[str] = Query(default=None, description="Filtra por marca exacta."),
+    model: Optional[str] = Query(default=None, description="Filtra por modelo exacto."),
+    year: Optional[int] = Query(default=None, description="Filtra por año de fabricación."),
+    vehicle_type: Optional[VehicleType] = Query(default=None, description="Filtra por tipo de vehículo."),
+    status: Optional[VehicleStatus] = Query(default=None, description="Filtra por estado operativo."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[Vehicle]:
@@ -101,17 +108,27 @@ def get_vehicles(
 
     return paginate(session, statement, page, response)
 
-@router.get("/{vehicle_id}", response_model=VehicleResponse)
+@router.get(
+    "/{vehicle_id}",
+    response_model=VehicleResponse,
+    summary="Consultar vehículo",
+    description="Obtiene los datos de un vehículo por UUID.",
+)
 def get_vehicle(
-    vehicle_id: UUID,
+    vehicle_id: Annotated[UUID, Path(description="UUID del vehículo.")],
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> Vehicle:
     return get_or_404(session, Vehicle, vehicle_id, "Vehicle")
 
-@router.put("/{vehicle_id}", response_model=VehicleResponse)
+@router.put(
+    "/{vehicle_id}",
+    response_model=VehicleResponse,
+    summary="Actualizar vehículo",
+    description="Actualiza los campos proporcionados del vehículo.",
+)
 def update_vehicle(
-    vehicle_id: UUID,
+    vehicle_id: Annotated[UUID, Path(description="UUID del vehículo que se desea actualizar.")],
     vehicle_data: VehicleUpdate,
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
@@ -124,14 +141,19 @@ def update_vehicle(
     session.refresh(vehicle)
     return vehicle
 
-@router.get("/{vehicle_id}/events", response_model=list[VehicleEventResponse])
+@router.get(
+    "/{vehicle_id}/events",
+    response_model=list[VehicleEventResponse],
+    summary="Listar eventos del vehículo",
+    description="Devuelve eventos paginados del vehículo; permite filtrar por código y rango de registro.",
+)
 def get_events(
     response: Response,
     page: PaginationDep,
-    vehicle_id: UUID,
-    code: Optional[str] = None,
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
+    vehicle_id: Annotated[UUID, Path(description="UUID del vehículo cuyos eventos se consultan.")],
+    code: Optional[str] = Query(default=None, description="Filtra por código de evento."),
+    from_date: Optional[datetime] = Query(default=None, description="Fecha y hora mínima de registro, inclusive."),
+    to_date: Optional[datetime] = Query(default=None, description="Fecha y hora máxima de registro, inclusive."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[VehicleEvent]:
@@ -151,11 +173,13 @@ def get_events(
 
 @router.post(
     "/{vehicle_id}/events",
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(verify_mqtt_consumer)]
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(verify_mqtt_consumer)],
+    summary="Registrar evento del vehículo",
+    description="Recibe un evento de un consumidor MQTT autenticado mediante API key y devuelve 204 sin contenido.",
 )
 def create_event(
-    vehicle_id: UUID,
+    vehicle_id: Annotated[UUID, Path(description="UUID del vehículo que generó el evento.")],
     event_data: VehicleEventCreate,
     session: Session = Depends(get_session),
 ):

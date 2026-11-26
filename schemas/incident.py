@@ -15,39 +15,39 @@ from schemas.trip import TripResponse
 from schemas.incident_media import IncidentMediaResponse
 
 class IncidentCreate(PositionCreateBase):
-    trip_id: UUID
-    code: str = Field(max_length=12)
-    status: Optional[IncidentStatus] = Field(default=IncidentStatus.open)
-    description: str = Field(min_length=2, max_length=500)
-    comments: Optional[str] = Field(default=None, min_length=2, max_length=500)
-    related_incident_id: Optional[UUID] = Field(default=None)
+    trip_id: UUID = Field(description="UUID del viaje en el que ocurrió el incidente.")
+    code: str = Field(max_length=12, description="Código de incidente existente en el catálogo.")
+    status: Optional[IncidentStatus] = Field(default=IncidentStatus.open, description="Estado inicial; por defecto OPEN.")
+    description: str = Field(min_length=2, max_length=500, description="Descripción de lo ocurrido, entre 2 y 500 caracteres.")
+    comments: Optional[str] = Field(default=None, min_length=2, max_length=500, description="Observaciones opcionales, entre 2 y 500 caracteres.")
+    related_incident_id: Optional[UUID] = Field(default=None, description="UUID de otro incidente relacionado.")
 
 class IncidentUpdate(SQLModel):
-    code: Optional[str] = Field(default=None, max_length=12)
-    priority: Optional[PriorityLevel] = Field(default=None)
-    status: Optional[IncidentStatus] = Field(default=None)
-    description: Optional[str] = Field(default=None, min_length=2, max_length=500)
-    comments: Optional[str] = Field(default=None, min_length=2, max_length=500)
-    related_incident_id: Optional[UUID] = Field(default=None)
+    code: Optional[str] = Field(default=None, max_length=12, description="Nuevo código de incidente.")
+    priority: Optional[PriorityLevel] = Field(default=None, description="Prioridad de atención: LOW, MEDIUM o HIGH.")
+    status: Optional[IncidentStatus] = Field(default=None, description="Nuevo estado: OPEN, IN_REVISION, CLOSED o DISCARDED.")
+    description: Optional[str] = Field(default=None, min_length=2, max_length=500, description="Nueva descripción, entre 2 y 500 caracteres.")
+    comments: Optional[str] = Field(default=None, min_length=2, max_length=500, description="Nuevas observaciones, entre 2 y 500 caracteres.")
+    related_incident_id: Optional[UUID] = Field(default=None, description="UUID de otro incidente relacionado; no puede ser el propio.")
 
 class IncidentResponse(SQLModel):
-    incident_id: UUID
-    trip_id: UUID
-    code: str = Field(exclude=True)
-    info: EventCodeResponse
-    position: Any = Field(exclude=True)
-    priority: PriorityLevel
-    status: IncidentStatus
-    description: str = Field(max_length=500)
-    comments: Optional[str] = Field(default=None, max_length=500)
-    related_incident_id: Optional[UUID]
-    registered_at: datetime
-    reviewed_at: Optional[datetime] = None
-    closed_at: Optional[datetime] = None
-    created_by_id: Optional[UUID] = None
-    reviewed_by_id: Optional[UUID] = None
+    incident_id: UUID = Field(description="Identificador único del incidente.")
+    trip_id: UUID = Field(description="Identificador del viaje relacionado.")
+    code: str = Field(exclude=True, description="Código interno, representado por el objeto info.")
+    info: EventCodeResponse = Field(description="Datos del código de incidente.")
+    position: Any = Field(exclude=True, description="Geometría interna; se expone como geojson.")
+    priority: PriorityLevel = Field(description="Prioridad de atención: LOW, MEDIUM o HIGH.")
+    status: IncidentStatus = Field(description="Estado actual del incidente.")
+    description: str = Field(max_length=500, description="Descripción de lo ocurrido.")
+    comments: Optional[str] = Field(default=None, max_length=500, description="Observaciones de seguimiento.")
+    related_incident_id: Optional[UUID] = Field(description="Identificador de otro incidente relacionado, si existe.")
+    registered_at: datetime = Field(description="Fecha y hora de registro.")
+    reviewed_at: Optional[datetime] = Field(default=None, description="Fecha y hora de la primera revisión.")
+    closed_at: Optional[datetime] = Field(default=None, description="Fecha y hora de cierre o descarte.")
+    created_by_id: Optional[UUID] = Field(default=None, description="Identificador del usuario que creó el incidente; puede ser nulo.")
+    reviewed_by_id: Optional[UUID] = Field(default=None, description="Identificador del usuario que lo revisó.")
 
-    @computed_field
+    @computed_field(description="Geometría GeoJSON Point de la ubicación, o null si no se registraron coordenadas.")
     @property
     def geojson(self) -> Optional[Dict[str, Any]]:
         if self.position:
@@ -57,7 +57,7 @@ class IncidentResponse(SQLModel):
             return None
 
 class IncidentResponseExtended(IncidentResponse):
-    trip: TripResponse
-    created_by: Optional[UserResponseShort]
-    reviewed_by: Optional[UserResponseShort]
-    media_files: list[IncidentMediaResponse]
+    trip: TripResponse = Field(description="Resumen del viaje asociado.")
+    created_by: Optional[UserResponseShort] = Field(description="Usuario creador, si existe.")
+    reviewed_by: Optional[UserResponseShort] = Field(description="Usuario revisor, si existe.")
+    media_files: list[IncidentMediaResponse] = Field(description="Archivos multimedia adjuntos al incidente.")

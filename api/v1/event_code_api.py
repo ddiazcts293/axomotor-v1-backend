@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query, Response
 from sqlmodel import Session, col, select
 
 from api.v1.common import PaginationDep, paginate
@@ -12,12 +12,17 @@ from schemas.event_code import EventCodeResponse
 
 router = APIRouter()
 
-@router.get("/", response_model=list[EventCodeResponse])
+@router.get(
+    "/",
+    response_model=list[EventCodeResponse],
+    summary="Consultar catálogo de códigos",
+    description="Lista códigos de eventos e incidentes; admite filtros por severidad, categoría, tipo y habilitación.",
+)
 def get_incident_codes(
-    severity: Optional[SeverityLevel] = None,
-    category: Optional[EventCategory] = None,
-    type: Optional[EventType] = None,
-    is_enabled: Optional[bool] = None,
+    severity: Optional[SeverityLevel] = Query(default=None, description="Filtra por severidad del código."),
+    category: Optional[EventCategory] = Query(default=None, description="Filtra por categoría del evento."),
+    type: Optional[EventType] = Query(default=None, description="Filtra por tipo VEHICLE, INCIDENT o BOTH."),
+    is_enabled: Optional[bool] = Query(default=None, description="Filtra códigos habilitados o deshabilitados."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[EventCode]:

@@ -36,19 +36,24 @@ def _solve_degree_tolerance(
 
     return None
 
-@router.get("/positions", response_model=list[PositionResponse])
+@router.get(
+    "/positions",
+    response_model=list[PositionResponse],
+    summary="Consultar posiciones de vehículos",
+    description="Devuelve posiciones GPS registradas y admite filtros por vehículo, viaje e intervalo de fechas.",
+)
 def get_positions(
     vehicle_id: Optional[UUID] = Query(
-        default=None, description="Filter by specific vehicle"
+        default=None, description="Limita los resultados a este UUID de vehículo."
     ),
     trip_id: Optional[UUID] = Query(
-        default=None, description="Filter by specific trip"
+        default=None, description="Limita los resultados a este UUID de viaje."
     ),
     from_date: Optional[datetime] = Query(
-        default=None, description="Start of range"
+        default=None, description="Incluye posiciones registradas desde esta fecha y hora."
     ),
     to_date: Optional[datetime] = Query(
-        default=None, description="End of range"
+        default=None, description="Incluye posiciones registradas hasta esta fecha y hora."
     ),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
@@ -74,29 +79,34 @@ def get_positions(
     statement = statement.order_by(col(Position.registered_at).desc())
     return list(session.exec(statement).all())
 
-@router.get("/routes", response_model=list[RouteResponse])
+@router.get(
+    "/routes",
+    response_model=list[RouteResponse],
+    summary="Consultar rutas de vehículos",
+    description="Agrupa posiciones por vehículo y viaje; solo devuelve grupos con dos o más puntos.",
+)
 def get_routes(
     vehicle_id: Optional[UUID] = Query(
-        default=None, description="Filter by specific vehicle"
+        default=None, description="Limita los resultados a este UUID de vehículo."
     ),
     trip_id: Optional[UUID] = Query(
-        default=None, description="Filter by specific trip"
+        default=None, description="Limita los resultados a este UUID de viaje."
     ),
     from_date: Optional[datetime] = Query(
-        default=None, description="Start of range"
+        default=None, description="Incluye posiciones registradas desde esta fecha y hora."
     ),
     to_date: Optional[datetime] = Query(
-        default=None, description="End of range"
+        default=None, description="Incluye posiciones registradas hasta esta fecha y hora."
     ),
     tolerance: Optional[float] = Query(
         default=None,
         ge=0.0,
         le=1000.0,
-        description="Simplification tolerance measured in meters (0 = no optimize). Example: 10, 15, 50.",
+        description="Tolerancia de simplificación geométrica en metros (0 desactiva la simplificación); rango 0–1000.",
     ),
     auto_optimize: bool = Query(
         default=False,
-        description="Set simplification automatically based on date range. When true, both from_date and to_date must be specified."
+        description="Activa una tolerancia automática según el intervalo; se requiere from_date y to_date."
     ),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),

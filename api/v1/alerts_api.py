@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from sqlmodel import Session, col, select
 
 from api.v1.common import PaginationDep, apply_update, commit_or_409, paginate
@@ -25,14 +25,19 @@ def _get_own_alert(session: Session, alert_id: UUID, user: User) -> UserAlert:
     return alert
 
 
-@router.get("/", response_model=list[UserAlertResponse])
+@router.get(
+    "/",
+    response_model=list[UserAlertResponse],
+    summary="Listar alertas propias",
+    description="Devuelve alertas del usuario autenticado, ordenadas de más reciente a más antigua; admite filtros y paginación.",
+)
 def get_alerts(
     response: Response,
     page: PaginationDep,
-    is_read: Optional[bool] = None,
-    alert_type: Optional[AlertType] = Query(default=None, alias="type"),
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
+    is_read: Optional[bool] = Query(default=None, description="Filtra alertas leídas o no leídas."),
+    alert_type: Optional[AlertType] = Query(default=None, alias="type", description="Filtra por categoría de alerta."),
+    from_date: Optional[datetime] = Query(default=None, description="Fecha y hora mínima de creación, inclusive."),
+    to_date: Optional[datetime] = Query(default=None, description="Fecha y hora máxima de creación, inclusive."),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> list[UserAlert]:
@@ -51,9 +56,14 @@ def get_alerts(
     return paginate(session, statement, page, response)
 
 
-@router.put("/{alert_id}", response_model=UserAlertResponse)
+@router.put(
+    "/{alert_id}",
+    response_model=UserAlertResponse,
+    summary="Actualizar alerta",
+    description="Actualiza el indicador de lectura de una alerta propia.",
+)
 def update_alert(
-    alert_id: UUID,
+    alert_id: Annotated[UUID, Path(description="UUID de la alerta propia que se desea actualizar.")],
     alert_data: UserAlertUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -66,7 +76,12 @@ def update_alert(
     return alert
 
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar alertas propias",
+    description="Elimina todas las alertas asociadas al usuario autenticado.",
+)
 def delete_alerts(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -79,9 +94,14 @@ def delete_alerts(
     session.commit()
 
 
-@router.delete("/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{alert_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar alerta",
+    description="Elimina una alerta que pertenezca al usuario autenticado.",
+)
 def delete_alert(
-    alert_id: UUID,
+    alert_id: Annotated[UUID, Path(description="UUID de la alerta propia que se desea eliminar.")],
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> None:

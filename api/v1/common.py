@@ -8,8 +8,8 @@ from sqlmodel import Session, SQLModel, func, select
 class Pagination:
     def __init__(
         self,
-        limit: int = Query(20, ge=1, le=100),
-        offset: int = Query(0, ge=0),
+        limit: int = Query(20, ge=1, le=100, description="Cantidad máxima de resultados por página (1–100)."),
+        offset: int = Query(0, ge=0, description="Cantidad de resultados que se omiten antes de iniciar la página."),
     ):
         self.limit = limit
         self.offset = offset

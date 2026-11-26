@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, col, select
 
@@ -33,6 +33,8 @@ CONFLICT_DETAIL = "The service could not be saved due to a conflicting or invali
     "/",
     response_model=VehicleServiceResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Registrar servicio",
+    description="Registra un mantenimiento para un vehículo existente; el usuario autenticado figura como creador.",
 )
 def register_service(
     service_data: VehicleServiceCreate,
@@ -54,14 +56,19 @@ def register_service(
     return service
 
 
-@router.get("/", response_model=list[VehicleServiceResponse])
+@router.get(
+    "/",
+    response_model=list[VehicleServiceResponse],
+    summary="Listar servicios",
+    description="Devuelve servicios paginados y permite filtrar por vehículo, estado y rango de fechas.",
+)
 def get_services(
     response: Response,
     page: PaginationDep,
-    vehicle_id: Optional[UUID] = None,
-    service_status: Optional[VehicleServiceStatus] = None,
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
+    vehicle_id: Optional[UUID] = Query(default=None, description="Filtra por UUID del vehículo."),
+    service_status: Optional[VehicleServiceStatus] = Query(default=None, description="Filtra por estado del servicio."),
+    from_date: Optional[datetime] = Query(default=None, description="Fecha y hora mínima de realización, inclusive."),
+    to_date: Optional[datetime] = Query(default=None, description="Fecha y hora máxima de realización, inclusive."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[VehicleService]:
@@ -80,9 +87,14 @@ def get_services(
     return paginate(session, statement, page, response)
 
 
-@router.get("/{service_id}", response_model=VehicleServiceResponseExtended)
+@router.get(
+    "/{service_id}",
+    response_model=VehicleServiceResponseExtended,
+    summary="Consultar servicio",
+    description="Obtiene el detalle del servicio con el vehículo y los usuarios relacionados.",
+)
 def get_service(
-    service_id: UUID,
+    service_id: Annotated[UUID, Path(description="UUID del servicio de mantenimiento.")],
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> VehicleService:
@@ -106,9 +118,14 @@ def get_service(
     return service
 
 
-@router.put("/{service_id}", response_model=VehicleServiceResponse)
+@router.put(
+    "/{service_id}",
+    response_model=VehicleServiceResponse,
+    summary="Actualizar servicio",
+    description="Actualiza el servicio; al pasar a COMPLETED se asigna al usuario actual como autorizador.",
+)
 def update_service(
-    service_id: UUID,
+    service_id: Annotated[UUID, Path(description="UUID del servicio que se desea actualizar.")],
     service_data: VehicleServiceUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),

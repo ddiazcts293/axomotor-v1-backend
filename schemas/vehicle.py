@@ -12,25 +12,25 @@ class VehicleCreate(SQLModel):
         min_length=6,
         max_length=12,
         pattern=r"^[\d\w -]+$",
-        description="Plate number (alphanumerical, spaces, and dashes are allowed)"
+        description="Placas del vehículo; admite letras, números, espacios y guiones."
     )
     reg_number: str = Field(
         min_length=12,
         max_length=22,
         pattern=r"^\d+$",
-        description="Registration number (digits only)"
+        description="Número de registro de la tarjeta de circulación, solo dígitos."
     )
     series_vin: str = Field(
         min_length=17,
         max_length=17,
         pattern=r"^\d+$",
-        description="Vehicle Identification Number (digits only)"
+        description="Número de identificación vehicular (VIN), exactamente 17 dígitos."
     )
-    brand: str = Field(min_length=1, max_length=60)
-    model: str = Field(min_length=1, max_length=60)
-    year: int = Field(gt=1900, le=datetime.now(timezone.utc).year + 2)
-    type: VehicleType
-    status: VehicleStatus = Field(default=VehicleStatus.operative)
+    brand: str = Field(min_length=1, max_length=60, description="Marca del vehículo.")
+    model: str = Field(min_length=1, max_length=60, description="Modelo del vehículo.")
+    year: int = Field(gt=1900, le=datetime.now(timezone.utc).year + 2, description="Año de fabricación; mayor que 1900 y hasta dos años en el futuro.")
+    type: VehicleType = Field(description="Tipo de vehículo.")
+    status: VehicleStatus = Field(default=VehicleStatus.operative, description="Estado operativo; por defecto OPERATIVE.")
 
     @field_validator("plate_number", mode="after")
     @classmethod
@@ -43,27 +43,27 @@ class VehicleUpdate(SQLModel):
         min_length=6,
         max_length=12,
         pattern=r"^[\d\w -]+$",
-        description="Plate number (alphanumerical, spaces, and dashes are allowed)"
+        description="Placas actualizadas; admite letras, números, espacios y guiones."
     )
     reg_number: Optional[str] = Field(
         default=None,
         min_length=12,
         max_length=22,
         pattern=r"^\d+$",
-        description="Registration number (digits only)"
+        description="Número de registro actualizado de la tarjeta de circulación, solo dígitos."
     )
     series_vin: Optional[str] = Field(
         default=None,
         min_length=17,
         max_length=17,
         pattern=r"^\d+$",
-        description="Vehicle Identification Number (digits only)"
+        description="VIN actualizado, exactamente 17 dígitos."
     )
-    brand: Optional[str] = Field(default=None, min_length=1, max_length=60)
-    model: Optional[str] = Field(default=None, min_length=1, max_length=60)
-    year: Optional[int] = Field(default=None, gt=1900, le=datetime.now(timezone.utc).year + 2)
-    type: Optional[VehicleType] = Field(default=None)
-    status: Optional[VehicleStatus] = Field(default=None)
+    brand: Optional[str] = Field(default=None, min_length=1, max_length=60, description="Nueva marca del vehículo.")
+    model: Optional[str] = Field(default=None, min_length=1, max_length=60, description="Nuevo modelo del vehículo.")
+    year: Optional[int] = Field(default=None, gt=1900, le=datetime.now(timezone.utc).year + 2, description="Nuevo año de fabricación.")
+    type: Optional[VehicleType] = Field(default=None, description="Nuevo tipo de vehículo.")
+    status: Optional[VehicleStatus] = Field(default=None, description="Nuevo estado operativo.")
 
     @field_validator("plate_number", mode="after")
     @classmethod
@@ -71,24 +71,24 @@ class VehicleUpdate(SQLModel):
         return v.strip().upper() if v is not None else None
 
 class VehicleResponseShort(SQLModel):
-    plate_number: str = Field(max_length=12)
-    brand: str = Field(max_length=60)
-    model: str = Field(max_length=60)
-    year: int
-    type: VehicleType
-    status: VehicleStatus
+    plate_number: str = Field(max_length=12, description="Placas del vehículo.")
+    brand: str = Field(max_length=60, description="Marca del vehículo.")
+    model: str = Field(max_length=60, description="Modelo del vehículo.")
+    year: int = Field(description="Año de fabricación.")
+    type: VehicleType = Field(description="Tipo de vehículo.")
+    status: VehicleStatus = Field(description="Estado operativo.")
 
 class VehicleResponse(SQLModel):
-    vehicle_id: UUID
-    plate_number: str = Field(max_length=12)
-    reg_number: str = Field(max_length=22)
-    series_vin: str = Field(max_length=17)
-    brand: str = Field(max_length=60)
-    model: str = Field(max_length=60)
-    year: int
-    type: VehicleType
-    status: VehicleStatus
-    registered_at: datetime
-    updated_at: Optional[datetime] = None
+    vehicle_id: UUID = Field(description="Identificador único del vehículo.")
+    plate_number: str = Field(max_length=12, description="Placas del vehículo.")
+    reg_number: str = Field(max_length=22, description="Número de registro de la tarjeta de circulación.")
+    series_vin: str = Field(max_length=17, description="Número de identificación vehicular (VIN).")
+    brand: str = Field(max_length=60, description="Marca del vehículo.")
+    model: str = Field(max_length=60, description="Modelo del vehículo.")
+    year: int = Field(description="Año de fabricación.")
+    type: VehicleType = Field(description="Tipo de vehículo.")
+    status: VehicleStatus = Field(description="Estado operativo.")
+    registered_at: datetime = Field(description="Fecha y hora de registro.")
+    updated_at: Optional[datetime] = Field(default=None, description="Fecha y hora de la última actualización.")
 
     model_config = {"from_attributes": True}

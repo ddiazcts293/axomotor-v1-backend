@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from geoalchemy2.elements import WKTElement
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, col, select
@@ -54,6 +54,8 @@ def _stamp_status_timestamps(
     "/",
     response_model=IncidentResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Registrar incidente",
+    description="Crea un incidente asociado a un viaje y a un código del catálogo; permite enviar coordenadas GPS.",
 )
 def register_incident(
     incident_data: IncidentCreate,
@@ -87,18 +89,23 @@ def register_incident(
     return incident
 
 
-@router.get("/", response_model=list[IncidentResponse])
+@router.get(
+    "/",
+    response_model=list[IncidentResponse],
+    summary="Listar incidentes",
+    description="Devuelve incidentes paginados con filtros por viaje, código, estado, prioridad, responsables e intervalo de fechas.",
+)
 def get_incidents(
     response: Response,
     page: PaginationDep,
-    trip_id: Optional[UUID] = None,
-    code: Optional[str] = None,
-    incident_status: Optional[IncidentStatus] = Query(default=None, alias="status"),
-    priority: Optional[PriorityLevel] = None,
-    created_by_id: Optional[UUID] = None,
-    reviewed_by_id: Optional[UUID] = None,
-    from_date: Optional[datetime] = None,
-    to_date: Optional[datetime] = None,
+    trip_id: Optional[UUID] = Query(default=None, description="Filtra por UUID del viaje."),
+    code: Optional[str] = Query(default=None, description="Filtra por código de incidente."),
+    incident_status: Optional[IncidentStatus] = Query(default=None, alias="status", description="Filtra por estado del incidente."),
+    priority: Optional[PriorityLevel] = Query(default=None, description="Filtra por prioridad LOW, MEDIUM o HIGH."),
+    created_by_id: Optional[UUID] = Query(default=None, description="Filtra por UUID del usuario creador."),
+    reviewed_by_id: Optional[UUID] = Query(default=None, description="Filtra por UUID del usuario revisor."),
+    from_date: Optional[datetime] = Query(default=None, description="Fecha y hora mínima de registro, inclusive."),
+    to_date: Optional[datetime] = Query(default=None, description="Fecha y hora máxima de registro, inclusive."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[Incident]:
@@ -125,9 +132,14 @@ def get_incidents(
     return paginate(session, statement, page, response)
 
 
-@router.get("/{incident_id}", response_model=IncidentResponseExtended)
+@router.get(
+    "/{incident_id}",
+    response_model=IncidentResponseExtended,
+    summary="Consultar incidente",
+    description="Obtiene el detalle del incidente, viaje relacionado, responsables y archivos multimedia.",
+)
 def get_incident(
-    incident_id: UUID,
+    incident_id: Annotated[UUID, Path(description="UUID del incidente.")],
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> Incident:
@@ -153,9 +165,14 @@ def get_incident(
     return incident
 
 
-@router.put("/{incident_id}", response_model=IncidentResponse)
+@router.put(
+    "/{incident_id}",
+    response_model=IncidentResponse,
+    summary="Actualizar incidente",
+    description="Actualiza los datos del incidente, establece al usuario autenticado como revisor y actualiza marcas de estado.",
+)
 def update_incident(
-    incident_id: UUID,
+    incident_id: Annotated[UUID, Path(description="UUID del incidente que se desea actualizar.")],
     incident_data: IncidentUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),

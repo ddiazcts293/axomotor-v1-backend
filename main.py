@@ -16,7 +16,13 @@ async def lifespan(app: FastAPI):
         SQLModel.metadata.create_all(engine)
     yield
 
-app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
+app = FastAPI(
+    title="AxoMotor API rest",
+    description="Backend del Sistema de monitoreo de vehículos en tiempo real",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -40,7 +46,12 @@ app.include_router(incident_media_router, prefix='/api/v1/incident_media', tags=
 app.include_router(event_codes_router, prefix='/api/v1/codes', tags=['Event Code catalog'])
 app.include_router(link_router, prefix='/api/v1/link_bot', tags=['Link Telegram Bot'])
 
-@app.get('/health', tags=['Health'])
+@app.get(
+    '/health',
+    tags=['Health'],
+    summary='Comprobar estado del servicio',
+    description='Devuelve un indicador sencillo de disponibilidad de la API.',
+)
 def health_check() -> dict[str, str]:
     return {'status': 'healthy'}
 

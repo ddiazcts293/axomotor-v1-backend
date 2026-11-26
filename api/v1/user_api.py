@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select, col
 
@@ -14,7 +14,12 @@ from schemas.user import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter()
 
-@router.get("/me", response_model=UserResponse)
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Consultar usuario autenticado",
+    description="Devuelve el perfil asociado al token de acceso actual.",
+)
 def get_logged_user(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -25,6 +30,8 @@ def get_logged_user(
     "/",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Registrar usuario",
+    description="Crea una cuenta nueva; el nombre de usuario, correo y teléfono deben ser únicos.",
 )
 def register_user(
     user_data: UserCreate,
@@ -68,12 +75,17 @@ def register_user(
     session.refresh(user)
     return user
 
-@router.get("/", response_model=list[UserResponse])
+@router.get(
+    "/",
+    response_model=list[UserResponse],
+    summary="Listar usuarios",
+    description="Devuelve un listado paginado y permite filtrar por rol y estado habilitado.",
+)
 def get_users(
     response: Response,
     page: PaginationDep,
-    role: Optional[UserRole] = None,
-    is_enabled: Optional[bool] = None,
+    role: Optional[UserRole] = Query(default=None, description="Filtra por rol ADMIN, DRIVER o AGENT."),
+    is_enabled: Optional[bool] = Query(default=None, description="Filtra por estado habilitado de la cuenta."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[User]:
@@ -91,9 +103,14 @@ def get_users(
 
     return paginate(session, statement, page, response)
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get(
+    "/{user_id}",
+    response_model=UserResponse,
+    summary="Consultar usuario",
+    description="Busca un usuario por UUID.",
+)
 def get_user(
-    user_id: UUID,
+    user_id: Annotated[UUID, Path(description="UUID del usuario que se desea consultar.")],
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> User:
@@ -106,9 +123,14 @@ def get_user(
         )
     return user
 
-@router.put("/{user_id}", response_model=UserResponse)
+@router.put(
+    "/{user_id}",
+    response_model=UserResponse,
+    summary="Actualizar usuario",
+    description="Actualiza los campos enviados del usuario identificado; no admite valores nulos.",
+)
 def update_user(
-    user_id: UUID,
+    user_id: Annotated[UUID, Path(description="UUID del usuario que se desea actualizar.")],
     user_update: UserUpdate,
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),

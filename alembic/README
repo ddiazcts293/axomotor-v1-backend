@@ -1,1 +1,18 @@
-Generic single-database configuration.
+# Migraciones de AxoMotor
+
+Las migraciones se administran con Alembic y la configuración del proyecto está en
+`alembic.ini`. Para aplicar todas las migraciones disponibles:
+
+```bash
+alembic upgrade head
+```
+
+Para consultar la revisión actual:
+
+```bash
+alembic current
+```
+
+Después de migrar una base de datos nueva, sincroniza el catálogo inicial con
+`python -m db.seed`. La estructura de los modelos se documenta en
+[`../models/readme.md`](../models/readme.md).

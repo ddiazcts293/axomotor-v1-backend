@@ -5,17 +5,20 @@
 **Vehiculo:**
 - [Dispositivo](#dispositivo)
 - [Sensor](#sensor)
-- [Rastreo GPS](#rastreogps)
-- [Conexión móvil](#conexiónmóvil)
-- [Acceso a sistema de vehículo](#accesoasistemadevehículo)
+- [Rastreo GPS](#rastreo-gps)
+- [Conexión móvil](#conexión-móvil)
+- [Acceso a sistema de vehículo](#acceso-a-sistema-de-vehículo)
 
 **Incidente:**
 - [Mecánico](#mecánico)
 - [Accidente](#accidente)
 - [Carga](#carga)
 - [Seguridad](#seguridad)
-- [Condiciones de ruta](#condicionesderuta)
+- [Condiciones de ruta](#condiciones-de-ruta)
 - [Conductor](#conductor)
+
+El catálogo es sembrado y actualizado por `db/seed.py`; al modificar sus entradas,
+mantén sincronizadas estas tablas y la respuesta `EventCodeResponse` de la API.
 
 ## Códigos de Eventos de Vehículos
 

@@ -103,7 +103,10 @@ def get_current_user(
 def get_user_from_telegram_id(
     _: Annotated[bool, Depends(verify_bot)],
     session: Annotated[Session, Depends(get_session)],
-    x_telegram_user_id: Annotated[str | None, Header()] = None
+    x_telegram_user_id: Annotated[
+        str | None,
+        Header(description="Identificador de Telegram asociado al perfil del conductor."),
+    ] = None
 ) -> User:
     if not x_telegram_user_id:
         raise HTTPException(
@@ -135,7 +138,10 @@ def get_web_or_bot_user(
     session: Annotated[Session, Depends(get_session)],
     token: Annotated[str | None, Depends(oauth2_scheme)] = None,
     bot_api_key: Annotated[str | None, Security(bot_key_header)] = None,
-    x_telegram_user_id: Annotated[str | None, Header()] = None,
+    x_telegram_user_id: Annotated[
+        str | None,
+        Header(description="Identificador de Telegram asociado al perfil del conductor."),
+    ] = None,
 ) -> User:
     # Caso A: Petición desde el servicio del Bot en nombre de un usuario
     if bot_api_key:
@@ -156,7 +162,10 @@ def get_user_or_service(
     token: Annotated[str | None, Depends(oauth2_scheme)] = None,
     mqtt_api_key: Annotated[str | None, Security(mqtt_consumer_key_header)] = None,
     bot_api_key: Annotated[str | None, Security(bot_key_header)] = None,
-    x_telegram_user_id: Annotated[str | None, Header()] = None,
+    x_telegram_user_id: Annotated[
+        str | None,
+        Header(description="Identificador de Telegram asociado al perfil del conductor."),
+    ] = None,
 ) -> bool | User:
     # Caso A: Petición desde el servicio MQTT Consumer
     if mqtt_api_key:

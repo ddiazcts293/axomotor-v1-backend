@@ -1,6 +1,7 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 from geoalchemy2.elements import WKTElement
@@ -21,6 +22,8 @@ router = APIRouter()
     "/",
     response_model=KnownLocationResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Registrar ubicación conocida",
+    description="Crea una ubicación con un polígono geográfico válido, cerrado y sin autointersecciones.",
 )
 def register_location(
     location_data: KnownLocationCreate,
@@ -59,16 +62,26 @@ def register_location(
     session.refresh(location)
     return location
 
-@router.get("/", response_model=list[KnownLocationResponse])
+@router.get(
+    "/",
+    response_model=list[KnownLocationResponse],
+    summary="Listar ubicaciones",
+    description="Devuelve todas las ubicaciones conocidas registradas.",
+)
 def get_locations(
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[KnownLocation]:
     return list(session.exec(select(KnownLocation)).all())
 
-@router.get("/{location_id}", response_model=KnownLocationResponse)
+@router.get(
+    "/{location_id}",
+    response_model=KnownLocationResponse,
+    summary="Consultar ubicación",
+    description="Obtiene una ubicación conocida por UUID.",
+)
 def get_location(
-    location_id: UUID,
+    location_id: Annotated[UUID, Path(description="UUID de la ubicación conocida.")],
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ):
@@ -81,9 +94,14 @@ def get_location(
         )
     return location
 
-@router.put("/{location_id}", response_model=KnownLocationResponse)
+@router.put(
+    "/{location_id}",
+    response_model=KnownLocationResponse,
+    summary="Actualizar ubicación",
+    description="Actualiza los datos enviados; si se modifica el polígono, se valida su geometría.",
+)
 def update_location(
-    location_id: UUID,
+    location_id: Annotated[UUID, Path(description="UUID de la ubicación que se desea actualizar.")],
     location_data: KnownLocationUpdate,
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),

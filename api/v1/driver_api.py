@@ -1,7 +1,7 @@
 from uuid import UUID
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, contains_eager
 from sqlmodel import Session, select, col
@@ -30,6 +30,8 @@ CONFLICT_DETAIL = "The driver could not be saved due to a conflicting or invalid
     "/",
     response_model=DriverResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Registrar conductor",
+    description="Crea un perfil de conductor para un usuario existente cuyo rol sea DRIVER.",
 )
 def register_driver(
     driver_data: DriverCreate,
@@ -51,14 +53,19 @@ def register_driver(
     session.refresh(driver)
     return driver
 
-@router.get("/", response_model=list[DriverResponse])
+@router.get(
+    "/",
+    response_model=list[DriverResponse],
+    summary="Listar conductores",
+    description="Devuelve conductores paginados; permite filtrar por usuario, clase de licencia y estados.",
+)
 def get_drivers(
     response: Response,
     page: PaginationDep,
-    user_id: Optional[UUID] = None,
-    license_class: Optional[LicenseClass] = None,
-    is_active: Optional[bool] = None,
-    is_enabled: Optional[bool] = None,
+    user_id: Optional[UUID] = Query(default=None, description="Filtra por UUID del usuario asociado."),
+    license_class: Optional[LicenseClass] = Query(default=None, description="Filtra por clase de licencia."),
+    is_active: Optional[bool] = Query(default=None, description="Filtra por estado activo del perfil."),
+    is_enabled: Optional[bool] = Query(default=None, description="Filtra por habilitación del conductor."),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> list[Driver]:
@@ -83,9 +90,14 @@ def get_drivers(
 
     return paginate(session, statement, page, response)
 
-@router.get("/{driver_id}", response_model=DriverResponse)
+@router.get(
+    "/{driver_id}",
+    response_model=DriverResponse,
+    summary="Consultar conductor",
+    description="Obtiene un perfil de conductor y el resumen del usuario asociado por UUID.",
+)
 def get_driver(
-    driver_id: UUID,
+    driver_id: Annotated[UUID, Path(description="UUID del perfil de conductor.")],
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),
 ) -> Driver:
@@ -104,9 +116,14 @@ def get_driver(
         )
     return driver
 
-@router.put("/{driver_id}", response_model=DriverResponse)
+@router.put(
+    "/{driver_id}",
+    response_model=DriverResponse,
+    summary="Actualizar conductor",
+    description="Actualiza los datos de licencia o la habilitación del conductor.",
+)
 def update_driver(
-    driver_id: UUID,
+    driver_id: Annotated[UUID, Path(description="UUID del perfil de conductor que se desea actualizar.")],
     driver_data: DriverUpdate,
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_user),

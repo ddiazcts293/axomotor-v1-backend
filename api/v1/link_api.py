@@ -17,6 +17,8 @@ router = APIRouter()
     "/",
     response_model=LinkCreateResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Crear token de vinculación",
+    description="Emite para el conductor autenticado un token temporal y la URL para iniciar la vinculación con Telegram.",
 )
 def create_link(
     session: Session = Depends(get_session),
@@ -47,7 +49,12 @@ def create_link(
     session.refresh(token)
     return token
 
-@router.put("/", response_model=DriverResponse)
+@router.put(
+    "/",
+    response_model=DriverResponse,
+    summary="Vincular cuenta de Telegram",
+    description="Canjea un token de vinculación vigente y guarda el identificador de Telegram en el perfil del conductor.",
+)
 def link_driver(
     user_data: DriverLink,
     session: Session = Depends(get_session)

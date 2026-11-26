@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -14,9 +14,42 @@ from schemas.user import UserUpdatePassword
 
 router = APIRouter()
 
-@router.post("/token", response_model=TokenCreate)
+
+class LoginForm(OAuth2PasswordRequestForm):
+    def __init__(
+        self,
+        *,
+        grant_type: Annotated[
+            str | None,
+            Form(pattern="password", description="Tipo OAuth2; si se envía debe ser password."),
+        ] = None,
+        username: Annotated[
+            str,
+            Form(description="Nombre de usuario, correo electrónico o teléfono registrado."),
+        ],
+        password: Annotated[str, Form(description="Contraseña de la cuenta.")],
+        scope: Annotated[str, Form(description="Ámbitos OAuth2; no se utilizan actualmente.")] = "",
+        client_id: Annotated[str | None, Form(description="Identificador de cliente OAuth2 opcional.")] = None,
+        client_secret: Annotated[str | None, Form(description="Secreto de cliente OAuth2 opcional.")] = None,
+    ) -> None:
+        super().__init__(
+            grant_type=grant_type,
+            username=username,
+            password=password,
+            scope=scope,
+            client_id=client_id,
+            client_secret=client_secret,
+        )
+
+
+@router.post(
+    "/token",
+    response_model=TokenCreate,
+    summary="Iniciar sesión",
+    description="Autentica con nombre de usuario, correo electrónico o teléfono y contraseña. Devuelve tokens de acceso y renovación.",
+)
 def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: Annotated[LoginForm, Depends()],
     session: Session = Depends(get_session),
 ) -> TokenCreate:
     user = session.exec(
@@ -45,7 +78,12 @@ def login_for_access_token(
 
     return create_token_pair(user.username, user.role)
 
-@router.post("/refresh", response_model=TokenCreate)
+@router.post(
+    "/refresh",
+    response_model=TokenCreate,
+    summary="Renovar tokens",
+    description="Valida un token de renovación vigente y emite un nuevo par de tokens.",
+)
 def refresh_token(
     form_data: TokenRefresh,
     session: Session = Depends(get_session),
@@ -66,7 +104,12 @@ def refresh_token(
 
     return create_token_pair(user.username, user.role)
 
-@router.put("/change_password", status_code=status.HTTP_204_NO_CONTENT)
+@router.put(
+    "/change_password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Cambiar contraseña",
+    description="Cambia la contraseña del usuario autenticado después de verificar la contraseña actual.",
+)
 def update_password(
     form_data: UserUpdatePassword,
     session: Session = Depends(get_session),
