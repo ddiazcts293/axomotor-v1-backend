@@ -19,6 +19,7 @@ from api.v1 import (
     trips_router,
     incidents_router,
     positions_router,
+    incident_media_router,
 )
 
 from core.config import settings
@@ -49,6 +50,7 @@ app.include_router(locations_router, prefix='/api/v1/locations', tags=['Known lo
 app.include_router(positions_router, prefix='/api/v1/tracking', tags=['Tracking'])
 app.include_router(trips_router, prefix='/api/v1/trips', tags=['Trips'])
 app.include_router(incidents_router, prefix='/api/v1/incidents', tags=['Incidents'])
+app.include_router(incident_media_router, prefix='/api/v1/incident_media', tags=['Incident Media'])
 app.include_router(event_codes_router, prefix='/api/v1/codes', tags=['Event Code catalog'])
 app.include_router(link_router, prefix='/api/v1/link_bot', tags=['Link Telegram Bot'])
 

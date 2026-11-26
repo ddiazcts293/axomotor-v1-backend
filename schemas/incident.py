@@ -10,8 +10,9 @@ from sqlmodel import SQLModel
 from models.enums import IncidentStatus, PriorityLevel
 from schemas.position import PositionCreateBase
 from schemas.event_code import EventCodeResponse
-from schemas.user import UserResponse
+from schemas.user import UserResponse, UserResponseShort
 from schemas.trip import TripResponse
+from schemas.incident_media import IncidentMediaResponse
 
 class IncidentCreate(PositionCreateBase):
     trip_id: UUID
@@ -58,4 +59,5 @@ class IncidentResponse(SQLModel):
 class IncidentResponseExtended(IncidentResponse):
     trip: TripResponse
     created_by: Optional[UserResponse]
-    reviewed_by: Optional[UserResponse]
+    reviewed_by: Optional[UserResponseShort]
+    media_files: list[IncidentMediaResponse]

@@ -16,8 +16,14 @@ from api.v1.common import (
 )
 from api.v1.dependencies import get_current_user
 from db.database import get_session
-from models import Incident, EventCode, Trip, User
-from models.enums import IncidentStatus, PriorityLevel
+from models import (
+    Incident,
+    EventCode,
+    Trip,
+    User,
+    IncidentStatus,
+    PriorityLevel,
+)
 from schemas.incident import (
     IncidentCreate,
     IncidentResponse,
@@ -133,6 +139,7 @@ def get_incident(
             joinedload(Incident.trip),
             joinedload(Incident.created_by),
             joinedload(Incident.reviewed_by),
+            joinedload(Incident.media_files),
         )
     )
 

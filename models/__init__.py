@@ -8,7 +8,7 @@ from .user import User
 from .vehicle_event import VehicleEvent
 from .vehicle_service import VehicleService
 from .driver import Driver
-from .incident_media import IncidentMedia
+from .incident_media_file import IncidentMediaFile
 from .known_location import KnownLocation
 from .position import Position
 from .user_alert import UserAlert

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from models.trip import Trip
     from models.user import User
     from models.event_code import EventCode
-    from models.incident_media import IncidentMedia
+    from models.incident_media_file import IncidentMediaFile
 
 class Incident(SQLModel, table=True):
     __tablename__ = 'incidents'
@@ -48,7 +48,7 @@ class Incident(SQLModel, table=True):
         back_populates='incidents_reviewed',
         sa_relationship_kwargs={'foreign_keys': '[Incident.reviewed_by_id]'}
     )
-    media_files: List['IncidentMedia'] = Relationship(
+    media_files: List['IncidentMediaFile'] = Relationship(
         back_populates='incident',
         sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
     )

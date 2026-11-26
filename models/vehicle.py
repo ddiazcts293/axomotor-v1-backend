@@ -17,8 +17,8 @@ class Vehicle(SQLModel, table=True):
     __tablename__ = 'vehicles'
 
     vehicle_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    plate_number: str = Field(index=True, unique=True, min_length=8, max_length=12)
-    reg_number: str = Field(index=True, unique=True, min_length=16, max_length=22)
+    plate_number: str = Field(index=True, unique=True, min_length=6, max_length=12)
+    reg_number: str = Field(index=True, unique=True, min_length=8, max_length=22)
     series_vin: str = Field(index=True, unique=True, min_length=17, max_length=17)
     brand: str = Field(index=True, min_length=1, max_length=60)
     model: str = Field(index=True, min_length=1, max_length=60)

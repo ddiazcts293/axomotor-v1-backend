@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from models.user_alert import UserAlert
     from models.vehicle_service import VehicleService
     from models.incident import Incident
+    from models.incident_media_file import IncidentMediaFile
 
 class User(SQLModel, table=True):
     __tablename__ = 'users'
@@ -69,5 +70,12 @@ class User(SQLModel, table=True):
         sa_relationship_kwargs={
             'cascade': 'all, delete-orphan',
             'foreign_keys': '[Incident.reviewed_by_id]'
+        }
+    )
+    media_files: List['IncidentMediaFile'] = Relationship(
+        back_populates='uploaded_by',
+        sa_relationship_kwargs={
+            'cascade': 'all, delete-orphan',
+            'foreign_keys': '[IncidentMediaFile.uploaded_by_id]'
         }
     )

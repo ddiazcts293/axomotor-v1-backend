@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import datetime, date, timedelta
 from typing import Optional
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, model_validator
 from sqlmodel import SQLModel
 
 from core.config import settings
@@ -11,13 +11,31 @@ from schemas.user import UserResponse
 
 class DriverCreate(SQLModel):
     user_id: UUID
-    license_number: str = Field(min_length=8, max_length=20)
+    license_number: str = Field(
+        min_length=8,
+        max_length=20,
+        pattern=r"^\d+$",
+        description="Driver's license number (digits only)"
+    )
     license_class: LicenseClass
     license_iss_date: date
     license_exp_date: date
 
+    @model_validator(mode="after")
+    def validate_dates(self) -> "DriverCreate":
+        if self.license_iss_date == self.license_exp_date:
+            raise ValueError("Issue date and expiration date cannot be the same")
+        if self.license_iss_date > self.license_exp_date:
+            raise ValueError("Issue date must be before expiration date")
+        return self
+
 class DriverUpdate(SQLModel):
-    license_number: Optional[str] = Field(default=None, min_length=8, max_length=20)
+    license_number: Optional[str] = Field(default=None,
+        min_length=8,
+        max_length=20,
+        pattern=r"^\d+$",
+        description="Driver's license number (digits only)"
+    )
     license_class: Optional[LicenseClass] = Field(default=None)
     license_iss_date: Optional[date] = Field(default=None)
     license_exp_date: Optional[date] = Field(default=None)
@@ -26,7 +44,7 @@ class DriverUpdate(SQLModel):
 class DriverResponse(SQLModel):
     driver_id: UUID
     user_id: UUID
-    telegram_user_id: Optional[int]
+    telegram_user_id: Optional[int] = Field(exclude=True)
     license_number: str = Field(max_length=20)
     license_class: LicenseClass
     license_iss_date: date
@@ -35,6 +53,11 @@ class DriverResponse(SQLModel):
     is_enabled: bool
     registered_at: datetime
     updated_at: Optional[datetime] = None
+
+    @computed_field
+    @property
+    def has_linked_telegram_account(self) -> bool:
+        return self.telegram_user_id is not None
 
     model_config = {"from_attributes": True}
 
