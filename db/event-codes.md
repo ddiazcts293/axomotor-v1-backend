@@ -43,7 +43,7 @@
 | `VE_PARKG_DET` | `info`    | Vehículo estacionado |
 | `VE_ACTIV_DET` | `info`    | Actividad dentro del vehículo detectada |
 | `VE_IMPCT_DET` | `medium`  | Impacto detectado |
-| `VE_SHOCK_DET` | `low`     | Sacudida level detectada |
+| `VE_SHOCK_DET` | `low`     | Sacudida leve detectada |
 | `VE_HARSH_ACC` | `low`     | Aceleración brusca detectada |
 | `VE_HARSH_BRK` | `low`     | Frenado brusco detectado |
 | `VE_HARSH_COR` | `low`     | Giro brusco detectado |
@@ -60,7 +60,7 @@
 | Código         | Severidad  | Descripción |
 | -------------- | ---------- | ----------- |
 | `VE_DATA_LOST` | `low`      | Conexión red móvil perdida |
-| `VE_DATA_REST` | `low`      | Conexión red móvil |
+| `VE_DATA_REST` | `low`      | Conexión red móvil restaurada |
 
 ### Acceso a sistema de vehículo
 
@@ -77,7 +77,7 @@
 | -------------- | ---------- | ----------- |
 | `IN_FLAT_TIRE` | `medium`   | Ponchadura o daño en neumático |
 | `IN_ENG_ISSUE` | `high`     | Falla mecánica en motor o transmisión |
-| `IN_BRK_ISSUE` | `critical` | Falla crítico en sistema de frenos |
+| `IN_BRK_ISSUE` | `critical` | Falla crítica en sistema de frenos |
 | `IN_ELEC_FAIL` | `high`     | Falla eléctrica o descarga de batería |
 | `IN_OVERHEATS` | `high`     | Sobrecalentamiento del motor |
 | `IN_FUEL_LEAK` | `critical` | Fuga de combustible o fluidos |
@@ -87,7 +87,7 @@
 
 | Código         | Severidad  | Descripción |
 | -------------- | ---------- | ----------- |
-| `IN_CAR_ACCNT` | `critical` | Accidente vehícular grave |
+| `IN_CAR_ACCNT` | `critical` | Accidente vehicular grave |
 | `IN_CAR_COLLN` | `critical` | Choque o colisión vehicular |
 | `IN_OVERTURNS` | `critical` | Volcadura del vehículo |
 | `IN_MINOR_HIT` | `medium`   | Percance vial menor sin lesionados |
