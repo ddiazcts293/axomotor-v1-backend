@@ -79,9 +79,7 @@ class KnownLocationResponse(SQLModel):
         polygon = to_shape(self.location_area)
         return mapping(polygon)
 
-class KnownLocationResponseSimple(SQLModel):
+class KnownLocationResponseShort(SQLModel):
     name: str = Field(max_length=60)
     type: Optional[str] = Field(default=None, max_length=40)
     address: str = Field(max_length=240)
-
-    model_config = {"from_attributes": True}

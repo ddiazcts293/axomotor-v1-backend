@@ -16,6 +16,7 @@ class IncidentMediaResponse(SQLModel):
     type: MediaType
     file_metadata: Optional[Dict[str, Any]]
     uploaded_at: datetime
+    uploaded_by_id: UUID
     uploaded_by: UserResponseShort
 
     model_config = {"from_attributes": True}

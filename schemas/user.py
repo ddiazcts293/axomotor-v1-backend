@@ -75,12 +75,8 @@ class UserResponse(SQLModel):
     model_config = {"from_attributes": True}
 
 class UserResponseShort(SQLModel):
-    user_id: UUID
-    first_name: str = Field(exclude=True)
-    last_name: Optional[str] = Field(exclude=True)
+    first_name: str
+    last_name: Optional[str]
     role: UserRole
-
-    @computed_field
-    @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}".strip()
+    phone_number: str = Field(max_length=16)
+    email: EmailStr = Field(max_length=120)

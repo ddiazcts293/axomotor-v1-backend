@@ -14,8 +14,6 @@ router = APIRouter()
 
 @router.get("/", response_model=list[EventCodeResponse])
 def get_incident_codes(
-    response: Response,
-    page: PaginationDep,
     severity: Optional[SeverityLevel] = None,
     category: Optional[EventCategory] = None,
     type: Optional[EventType] = None,
@@ -34,5 +32,9 @@ def get_incident_codes(
     if is_enabled is not None:
         statement = statement.where(EventCode.is_enabled == is_enabled)
 
-    statement = statement.order_by(col(EventCode.code))
-    return paginate(session, statement, page, response)
+    statement = statement.order_by(
+        col(EventCode.type).asc(),
+        col(EventCode.category).asc(),
+    )
+
+    return list(session.exec(statement).all())

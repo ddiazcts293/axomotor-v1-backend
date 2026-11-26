@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 
 from api.v1.common import PaginationDep, paginate
 from api.v1.dependencies import get_current_user
@@ -83,6 +83,11 @@ def get_users(
         statement = statement.where(User.role == role)
     if is_enabled is not None:
         statement = statement.where(User.is_enabled == is_enabled)
+
+    statement = statement.order_by(
+        col(User.first_name).asc(),
+        col(User.last_name).asc().nulls_last(),
+    )
 
     return paginate(session, statement, page, response)
 

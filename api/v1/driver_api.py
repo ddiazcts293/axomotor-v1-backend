@@ -2,8 +2,9 @@ from uuid import UUID
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy.orm import joinedload
-from sqlmodel import Session, select
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload, contains_eager
+from sqlmodel import Session, select, col
 
 from api.v1.common import (
     PaginationDep,
@@ -18,8 +19,7 @@ from models import Driver, User, UserRole, LicenseClass
 from schemas.driver import (
     DriverCreate,
     DriverUpdate,
-    DriverResponse,
-    DriverResponseExtended
+    DriverResponse
 )
 
 router = APIRouter()
@@ -73,9 +73,17 @@ def get_drivers(
     if is_enabled is not None:
         statement = statement.where(Driver.is_enabled == is_enabled)
 
+    statement = statement \
+        .outerjoin(Driver.user) \
+        .options(contains_eager(Driver.user)) \
+        .order_by(
+            func.lower(User.first_name).asc(),
+            func.lower(User.last_name).asc().nulls_last(),
+        )
+
     return paginate(session, statement, page, response)
 
-@router.get("/{driver_id}", response_model=DriverResponseExtended)
+@router.get("/{driver_id}", response_model=DriverResponse)
 def get_driver(
     driver_id: UUID,
     session: Session = Depends(get_session),

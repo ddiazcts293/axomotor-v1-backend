@@ -7,6 +7,7 @@ from sqlmodel import SQLModel
 
 from models.enums import VehicleServiceStatus
 from schemas.user import UserResponseShort
+from schemas.vehicle import VehicleResponseShort
 
 class VehicleServiceCreate(SQLModel):
     vehicle_id: UUID
@@ -41,3 +42,4 @@ class VehicleServiceResponse(SQLModel):
 class VehicleServiceResponseExtended(VehicleServiceResponse):
     created_by: UserResponseShort
     authorized_by: Optional[UserResponseShort]
+    vehicle: VehicleResponseShort

@@ -1,13 +1,13 @@
 from uuid import UUID
 from datetime import datetime, date, timedelta
-from typing import Optional
+from typing import Optional, override
 
 from pydantic import Field, computed_field, model_validator
 from sqlmodel import SQLModel
 
 from core.config import settings
 from models.enums import LicenseClass
-from schemas.user import UserResponse
+from schemas.user import UserResponse, UserResponseShort
 
 class DriverCreate(SQLModel):
     user_id: UUID
@@ -41,6 +41,35 @@ class DriverUpdate(SQLModel):
     license_exp_date: Optional[date] = Field(default=None)
     is_enabled: Optional[bool] = None
 
+class DriverResponseShort(SQLModel):
+    user: UserResponse = Field(exclude=True)
+    user_id: UUID
+
+    @computed_field
+    @property
+    def first_name(self) -> str:
+        return self.user.first_name
+
+    @computed_field
+    @property
+    def last_name(self) -> Optional[str]:
+        return self.user.last_name
+
+    @computed_field
+    @property
+    def phone_number(self) -> str:
+        return self.user.phone_number
+
+    @computed_field
+    @property
+    def email(self) -> str:
+        return self.user.email
+
+    license_number: str = Field(max_length=20)
+    license_class: LicenseClass
+    is_active: bool
+    is_enabled: bool
+
 class DriverResponse(SQLModel):
     driver_id: UUID
     user_id: UUID
@@ -59,10 +88,9 @@ class DriverResponse(SQLModel):
     def has_linked_telegram_account(self) -> bool:
         return self.telegram_user_id is not None
 
-    model_config = {"from_attributes": True}
+    user: UserResponseShort = Field(...)
 
-class DriverResponseExtended(DriverResponse):
-    user: UserResponse
+    model_config = {"from_attributes": True}
 
 class LinkCreateResponse(SQLModel):
     token: str = Field(max_length=60)

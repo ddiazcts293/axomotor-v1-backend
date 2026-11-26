@@ -121,7 +121,15 @@ def get_trips(
     if to_date is not None:
         statement = statement.where(Trip.departure_date <= to_date)
 
-    statement = statement.order_by(col(Trip.departure_date).desc())
+    statement = statement \
+        .order_by(col(Trip.departure_date).desc()) \
+        .options(
+            joinedload(Trip.driver),
+            joinedload(Trip.vehicle),
+            joinedload(Trip.origin),
+            joinedload(Trip.destination),
+        )
+
     return paginate(session, statement, page, response)
 
 

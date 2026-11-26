@@ -58,6 +58,6 @@ class IncidentResponse(SQLModel):
 
 class IncidentResponseExtended(IncidentResponse):
     trip: TripResponse
-    created_by: Optional[UserResponse]
+    created_by: Optional[UserResponseShort]
     reviewed_by: Optional[UserResponseShort]
     media_files: list[IncidentMediaResponse]

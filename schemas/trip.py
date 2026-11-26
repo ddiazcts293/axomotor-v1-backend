@@ -7,9 +7,9 @@ from pydantic import Field
 from sqlmodel import SQLModel
 
 from models.enums import TripStatus
-from schemas.vehicle import VehicleResponse
-from schemas.known_location import KnownLocationResponseSimple
-from schemas.driver import DriverResponseExtended
+from schemas.vehicle import VehicleResponse, VehicleResponseShort
+from schemas.known_location import KnownLocationResponseShort
+from schemas.driver import DriverResponse, DriverResponseShort
 
 class TripCreate(SQLModel):
     vehicle_id: UUID
@@ -44,10 +44,13 @@ class TripResponse(SQLModel):
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
 
+    vehicle: VehicleResponseShort
+    driver: DriverResponseShort
+    origin: KnownLocationResponseShort
+    destination: KnownLocationResponseShort
+
     model_config = {"from_attributes": True}
 
 class TripResponseExtended(TripResponse):
     vehicle: VehicleResponse
-    driver: DriverResponseExtended
-    origin: KnownLocationResponseSimple
-    destination: KnownLocationResponseSimple
+    driver: DriverResponse

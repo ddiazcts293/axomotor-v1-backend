@@ -70,6 +70,14 @@ class VehicleUpdate(SQLModel):
     def normalize_plate_number(cls, v: Optional[str]) -> Optional[str]:
         return v.strip().upper() if v is not None else None
 
+class VehicleResponseShort(SQLModel):
+    plate_number: str = Field(max_length=12)
+    brand: str = Field(max_length=60)
+    model: str = Field(max_length=60)
+    year: int
+    type: VehicleType
+    status: VehicleStatus
+
 class VehicleResponse(SQLModel):
     vehicle_id: UUID
     plate_number: str = Field(max_length=12)

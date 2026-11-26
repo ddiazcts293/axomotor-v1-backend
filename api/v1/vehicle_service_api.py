@@ -90,6 +90,7 @@ def get_service(
         select(VehicleService)
         .where(VehicleService.service_id == service_id)
         .options(
+            joinedload(VehicleService.vehicle),
             joinedload(VehicleService.created_by),
             joinedload(VehicleService.authorized_by),
         )
