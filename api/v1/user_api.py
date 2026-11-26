@@ -1,55 +1,18 @@
-from datetime import timedelta
-from typing import Annotated, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from api.v1.common import PaginationDep, paginate
 from api.v1.dependencies import get_current_user
-from core.config import settings
-from core.security import create_access_token, get_password_hash, verify_password
+from core.security import get_password_hash
 from db.database import get_session
 from models import User, UserRole
-from schemas.token import Token
-from schemas.user import UserCreate, UserResponse, UserUpdate, UserUpdatePassword
+from schemas.user import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter()
-
-@router.post("/token", response_model=Token)
-def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: Session = Depends(get_session),
-) -> Token:
-    user = session.exec(
-        select(User).where(User.username == form_data.username)
-    ).first()
-
-    if user is None or not verify_password(
-        form_data.password,
-        user.hashed_password,
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if not user.is_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User disabled",
-        )
-
-    access_token = create_access_token(
-        data={"sub": user.username, "role": user.role},
-        expires_delta=timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
-        ),
-    )
-    return Token(access_token=access_token)
 
 @router.get("/me", response_model=UserResponse)
 def get_logged_user(
@@ -191,38 +154,3 @@ def update_user(
 
     session.refresh(user)
     return user
-
-@router.put("/{user_id}/change_password", status_code=status.HTTP_204_NO_CONTENT)
-def update_password(
-    user_id: UUID,
-    form_data: UserUpdatePassword,
-    session: Session = Depends(get_session),
-    _current_user: User = Depends(get_current_user)
-):
-    user = session.get(User, user_id)
-    if user is None or not verify_password(
-        form_data.current_password,
-        user.hashed_password
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invalid username or password",
-        )
-
-    if not user.is_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User disabled",
-        )
-
-    user.hashed_password = get_password_hash(form_data.new_password)
-    session.add(user)
-
-    try:
-        session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Cannot update password",
-        ) from None

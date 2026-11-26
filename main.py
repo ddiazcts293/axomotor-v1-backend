@@ -6,22 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
-from api.v1 import (
-    users_router,
-    drivers_router,
-    link_router,
-    vehicles_router,
-    locations_router,
-    alerts_router,
-    event_codes_router,
-    vehicle_devices_router,
-    vehicle_services_router,
-    trips_router,
-    incidents_router,
-    positions_router,
-    incident_media_router,
-)
-
+from api.v1 import *
 from core.config import settings
 from db.database import engine
 
@@ -40,6 +25,7 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+app.include_router(auth_router, prefix='/api/v1/auth', tags=['Authentication'])
 app.include_router(users_router, prefix='/api/v1/users', tags=['Users'])
 app.include_router(alerts_router, prefix='/api/v1/alerts', tags=['User alerts'])
 app.include_router(drivers_router, prefix='/api/v1/drivers', tags=['Drivers'])

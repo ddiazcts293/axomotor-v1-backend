@@ -10,14 +10,18 @@ from core.config import settings
 from db.database import get_session
 from models import User, UserRole, Driver
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/token",
+    refreshUrl="/api/v1/auth/refresh",
+)
 mqtt_consumer_key_header = APIKeyHeader(name="X-MQTT-Consumer-API-Key", auto_error=False)
 bot_key_header = APIKeyHeader(name="X-Bot-API-Key", auto_error=False)
 
 def verify_mqtt_consumer(
     api_key: Annotated[str | None, Security(mqtt_consumer_key_header)]
 ) -> bool:
-    if not api_key or not secrets.compare_digest(api_key, settings.X_MQTT_CONSUMER_API_KEY):
+    if not api_key or settings.X_MQTT_CONSUMER_API_KEY is None or \
+        not secrets.compare_digest(api_key, settings.X_MQTT_CONSUMER_API_KEY):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate API Key"
@@ -28,13 +32,37 @@ def verify_mqtt_consumer(
 def verify_bot(
     api_key: Annotated[str | None, Security(bot_key_header)]
 ) -> bool:
-    if not api_key or not secrets.compare_digest(api_key, settings.X_BOT_API_KEY):
+    if not api_key or settings.X_BOT_API_KEY is None or \
+        secrets.compare_digest(api_key, settings.X_BOT_API_KEY):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate API Key"
         )
 
     return True
+
+def verify_token(token: str, expected_type: str) -> dict:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.TOKEN_ALGORITHM],
+        )
+        if payload.get("type") != expected_type:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token type, expected: '{expected_type}'",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return payload
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -64,7 +92,7 @@ def get_current_user(
 
     if user is None:
         raise credentials_exception
-    if not user.is_enabled:
+    elif not user.is_enabled:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user",
